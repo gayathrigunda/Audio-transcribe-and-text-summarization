@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription & Summarization</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; margin: auto; }
+        label, button { display: block; margin-top: 20px; }
+        textarea { width: 100%; height: 120px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Transcribe & Summarize Audio (.m4a) or Text (.txt)</h2>
+        <form id="audioForm">
+            <label for="audioFile">Select .m4a, .mp3, .wav or .txt file:</label>
+            <input type="file" id="audioFile" name="audioFile" accept="audio/m4a,audio/mp3,audio/wav,.txt" required />
+            <button type="submit">Submit</button>
+        </form>
+        <div id="result" style="display:none;">
+            <h3>Transcription/Text</h3>
+            <textarea id="transcription" readonly></textarea>
+            <h3>Summary</h3>
+            <textarea id="summary" readonly></textarea>
+        </div>
+        <div id="error" style="display:none; color: red;">
+            <h3>Error</h3>
+            <textarea id="errorMessage" readonly></textarea>
+        </div>
+    </div>
+    <script>
+        document.getElementById('audioForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('audioFile');
+            if (!fileInput.files.length) return;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const res = await fetch('http://localhost:8000/process-file/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('errorMessage').value = data.error || 'Unknown error';
+                    document.getElementById('result').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('transcription').value = data.text || '';
+                document.getElementById('summary').value = data.summary || '';
+            } catch (err) {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').value = 'Error: ' + err.message;
+                document.getElementById('result').style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
